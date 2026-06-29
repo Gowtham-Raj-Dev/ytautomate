@@ -174,7 +174,7 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
     // Create a Firestore record up front so the upload is tracked even on failure.
     let recordId: string | null = null;
     try {
-      const isScheduled = visibility === "private" && !!scheduledAt;
+      const isScheduled = !!scheduledAt;
       const scheduledTime = isScheduled ? new Date(scheduledAt).getTime() : null;
       
       recordId = await createUploadRecord({
@@ -390,19 +390,17 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
           </div>
         </div>
 
-        {visibility === "private" && (
-          <label className={styles.field} style={{ marginTop: "16px" }}>
-            <span className={styles.label}>Schedule Time (Optional)</span>
-            <input
-              type="datetime-local"
-              className={styles.input}
-              value={scheduledAt}
-              onChange={(e) => setScheduledAt(e.target.value)}
-              disabled={uploading}
-              min={new Date().toISOString().slice(0, 16)}
-            />
-          </label>
-        )}
+        <label className={styles.field} style={{ marginTop: "16px" }}>
+          <span className={styles.label}>Schedule Time (Optional)</span>
+          <input
+            type="datetime-local"
+            className={styles.input}
+            value={scheduledAt}
+            onChange={(e) => setScheduledAt(e.target.value)}
+            disabled={uploading}
+            min={new Date().toISOString().slice(0, 16)}
+          />
+        </label>
       </div>
 
       <div className={styles.actions}>
