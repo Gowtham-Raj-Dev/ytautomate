@@ -24,8 +24,9 @@ if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
 }
 
 if (!getApps().length) {
+  const cleanKey = serviceAccountKey.trim().replace(/^\uFEFF/, '');
   initializeApp({
-    credential: cert(JSON.parse(serviceAccountKey)),
+    credential: cert(JSON.parse(cleanKey)),
     storageBucket: STORAGE_BUCKET,
   });
 }
