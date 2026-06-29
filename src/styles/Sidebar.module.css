@@ -1,0 +1,97 @@
+.sidebar {
+  width: 260px;
+  background-color: #09090b;
+  border-right: 1px solid #27272a;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  height: 100vh;
+}
+
+.logoWrap {
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  height: 72px; /* Match header height */
+  border-bottom: 1px solid #27272a;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  gap: 8px;
+  flex: 1;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  color: #a1a1aa;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.link:hover {
+  background-color: #18181b;
+  color: #f4f4f5;
+}
+
+.active {
+  background-color: #27272a;
+  color: #fff;
+}
+
+.icon {
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.footer {
+  padding: 24px 16px;
+  border-top: 1px solid #27272a;
+}
+
+.helpBox {
+  background: #18181b;
+  border: 1px solid #27272a;
+  padding: 16px;
+  border-radius: 12px;
+}
+.helpBox p {
+  color: #f4f4f5;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+}
+.helpBox a {
+  color: var(--primary, #ff2a2a);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.helpBox a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid #27272a;
+  }
+  .nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 16px;
+  }
+  .footer {
+    display: none;
+  }
+}

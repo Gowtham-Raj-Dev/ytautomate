@@ -1,0 +1,36 @@
+.appContainer {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: #09090b; /* Very clean dark background */
+}
+
+.mainContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0; /* Important for flex children to allow truncate */
+}
+
+.scrollArea {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+}
+
+.pageContent {
+  padding: 32px 48px;
+  max-width: 100%;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .appContainer {
+    flex-direction: column;
+  }
+  .pageContent {
+    padding: 24px;
+  }
+}

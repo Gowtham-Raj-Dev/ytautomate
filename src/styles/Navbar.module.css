@@ -1,0 +1,119 @@
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: var(--nav-height);
+  display: flex;
+  align-items: center;
+  transition: background 0.25s ease, border-color 0.25s ease, backdrop-filter 0.25s ease;
+  border-bottom: 1px solid transparent;
+}
+
+.scrolled {
+  background: var(--bg);
+  border-bottom-color: var(--border-strong);
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.links {
+  display: flex;
+  gap: 4px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.link {
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.link:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.signin {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  transition: color 0.15s ease;
+}
+.signin:hover {
+  color: var(--text);
+}
+
+.menuBtn {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px;
+}
+.bar {
+  width: 22px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+.bar1 {
+  transform: translateY(7px) rotate(45deg);
+}
+.bar2 {
+  opacity: 0;
+}
+.bar3 {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+.mobileMenu {
+  position: absolute;
+  top: var(--nav-height);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mobileLink {
+  padding: 12px 8px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+@media (max-width: 860px) {
+  .links,
+  .signin {
+    display: none;
+  }
+  .menuBtn {
+    display: flex;
+  }
+  .actions .signin {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .actions {
+    display: none;
+  }
+}
