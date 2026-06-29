@@ -1,4 +1,6 @@
-import * as admin from 'firebase-admin';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getStorage } from 'firebase-admin/storage';
 import { google } from 'googleapis';
 import * as dotenv from 'dotenv';
 
@@ -21,15 +23,15 @@ if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
   process.exit(1);
 }
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(JSON.parse(serviceAccountKey)),
+if (!getApps().length) {
+  initializeApp({
+    credential: cert(JSON.parse(serviceAccountKey)),
     storageBucket: STORAGE_BUCKET,
   });
 }
 
-const db = admin.firestore();
-const storage = admin.storage().bucket();
+const db = getFirestore();
+const storage = getStorage().bucket();
 
 async function run() {
   console.log("Starting Auto-Upload Cron Job...");
@@ -112,10 +114,10 @@ async function run() {
 
             // Update user stats
             await userDoc.ref.update({
-              videosPosted: admin.firestore.FieldValue.increment(1),
-              totalUploads: admin.firestore.FieldValue.increment(1),
-              currentStorageUsed: admin.firestore.FieldValue.increment(-Number(fileSize || 0)),
-              videosDeletedFromFirebase: admin.firestore.FieldValue.increment(1),
+              videosPosted: FieldValue.increment(1),
+              totalUploads: FieldValue.increment(1),
+              currentStorageUsed: FieldValue.increment(-Number(fileSize || 0)),
+              videosDeletedFromFirebase: FieldValue.increment(1),
             });
 
             // Delete file from Firebase Storage
