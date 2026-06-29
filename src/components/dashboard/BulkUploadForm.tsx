@@ -253,6 +253,7 @@ export function BulkUploadForm() {
           fileUrl: result.url,
           storagePath: result.path,
           error: null,
+          uploadType: "bulk",
         });
 
         await updateStatsOnFirebaseUpload(user.uid, latestItem.file.size);

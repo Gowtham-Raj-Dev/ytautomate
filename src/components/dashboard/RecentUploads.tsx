@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import type { UploadRecord, UploadStatus } from "@/types";
@@ -22,21 +23,71 @@ interface RecentUploadsProps {
 }
 
 export function RecentUploads({ uploads, loading }: RecentUploadsProps) {
+  const [activeSubTab, setActiveSubTab] = useState<"single" | "bulk">("single");
+
+  const filteredUploads = uploads.filter((u) => {
+    if (activeSubTab === "single") {
+      return u.uploadType !== "bulk";
+    } else {
+      return u.uploadType === "bulk";
+    }
+  });
+
+  const singleCount = uploads.filter(u => u.uploadType !== "bulk").length;
+  const bulkCount = uploads.filter(u => u.uploadType === "bulk").length;
+
   return (
     <div className={styles.card}>
-      <div className={styles.head}>
-        <h2 className={styles.title}>Recent uploads</h2>
-        <span className={styles.count}>{uploads.length} total</span>
+      <div className={styles.head} style={{ flexDirection: "column", alignItems: "stretch", gap: "16px", marginBottom: "24px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h2 className={styles.title}>Recent uploads</h2>
+          <span className={styles.count}>{uploads.length} total</span>
+        </div>
+        
+        <div style={{ display: "flex", gap: "12px", borderBottom: "1px solid var(--border)", paddingBottom: "8px" }}>
+          <button
+            onClick={() => setActiveSubTab("single")}
+            style={{
+              padding: "6px 16px",
+              borderRadius: "16px",
+              border: "none",
+              background: activeSubTab === "single" ? "var(--primary)" : "transparent",
+              color: activeSubTab === "single" ? "white" : "var(--text-secondary)",
+              fontSize: "0.85rem",
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+          >
+            Single Videos ({singleCount})
+          </button>
+          <button
+            onClick={() => setActiveSubTab("bulk")}
+            style={{
+              padding: "6px 16px",
+              borderRadius: "16px",
+              border: "none",
+              background: activeSubTab === "bulk" ? "var(--primary)" : "transparent",
+              color: activeSubTab === "bulk" ? "white" : "var(--text-secondary)",
+              fontSize: "0.85rem",
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+          >
+            Bulk Folder Uploads ({bulkCount})
+          </button>
+        </div>
       </div>
 
       {loading ? (
         <div className={styles.empty}>
           <Spinner size={24} label="Loading uploads" />
         </div>
-      ) : uploads.length === 0 ? (
+      ) : filteredUploads.length === 0 ? (
         <div className={styles.empty}>
           <div className={styles.emptyIcon} aria-hidden><MdMovie size={48} color="#a1a1aa" /></div>
-          <p className={styles.emptyTitle}>No uploads yet</p>
+          <p className={styles.emptyTitle}>No {activeSubTab === "single" ? "single" : "bulk"} uploads yet</p>
           <p className={styles.emptySub}>Your published Shorts will appear here.</p>
         </div>
       ) : (
@@ -52,7 +103,7 @@ export function RecentUploads({ uploads, loading }: RecentUploadsProps) {
               </tr>
             </thead>
             <tbody>
-              {uploads.map((u) => {
+              {filteredUploads.map((u) => {
                 const status = STATUS_META[u.status];
                 return (
                   <tr key={u.id}>

@@ -7,6 +7,7 @@ export function cx(...classes: Array<string | false | null | undefined>): string
 
 /** Human-readable file size, e.g. 1536 → "1.5 KB". */
 export function formatBytes(bytes: number, decimals = 1): string {
+  if (bytes < 0) bytes = 0;
   if (!bytes) return "0 B";
   const k = 1024;
   const sizes = ["B", "KB", "MB", "GB", "TB"];

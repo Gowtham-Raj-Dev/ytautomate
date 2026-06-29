@@ -11,6 +11,7 @@ import {
   createUploadRecord,
   updateUploadRecord,
   incrementUploadCount,
+  updateStatsOnFirebaseUpload,
 } from "@/services/firestore";
 import {
   validateVideoFile,
@@ -190,6 +191,7 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
         createdAt: Date.now(),
         scheduledAt: scheduledTime,
         error: null,
+        uploadType: "single",
       });
 
       if (isScheduled) {
@@ -199,6 +201,7 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
           fileUrl: result.url,
           storagePath: result.path,
         });
+        await updateStatsOnFirebaseUpload(user.uid, file.size);
         toast.success("Short scheduled for later upload! 🕒");
       } else {
         // Upload immediately to YouTube
