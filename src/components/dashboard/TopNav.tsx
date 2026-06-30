@@ -64,25 +64,7 @@ export function TopNav() {
         </nav>
 
         <div className={styles.right}>
-          {channel ? (
-            <div className={styles.channel}>
-              {channel.thumbnail ? (
-                <Image
-                  src={channel.thumbnail}
-                  alt=""
-                  width={26}
-                  height={26}
-                  className={styles.channelImg}
-                />
-              ) : (
-                <span className={styles.channelDot} />
-              )}
-              <span className={styles.channelName}>{channel.title}</span>
-              <span className={styles.live}>● Connected</span>
-            </div>
-          ) : (
-            <span className={styles.notConnected}>No channel</span>
-          )}
+
 
           <div className={styles.menuWrap} ref={menuRef}>
             <button
