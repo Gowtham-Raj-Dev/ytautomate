@@ -12,4 +12,4 @@ jobs:
     steps:
       - name: Trigger Upload Cron API
         run: |
-          curl -f -X GET "https://ytautomation.codelove.in/api/cron/upload?secret=${{ secrets.CRON_SECRET }}"
+          curl -f -X GET "https://ytautomate.codelove.in/api/cron/upload?secret=${{ secrets.CRON_SECRET }}"
