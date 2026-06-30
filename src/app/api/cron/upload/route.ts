@@ -19,15 +19,6 @@ const db = getFirestore();
 const storage = getStorage().bucket();
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const secret = searchParams.get("secret");
-
-  // Protect the route using a custom CRON_SECRET environment variable
-  const expectedSecret = process.env.CRON_SECRET;
-  if (expectedSecret && secret !== expectedSecret) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   console.log("Triggering Auto-Upload via API Cron...");
   const now = Date.now();
   const processed: string[] = [];
