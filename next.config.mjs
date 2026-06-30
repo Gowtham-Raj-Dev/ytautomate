@@ -19,6 +19,14 @@ const nextConfig = {
     return config;
   },
   turbopack: {},
+  async rewrites() {
+    return [
+      {
+        source: '/__/auth/:path*',
+        destination: 'https://yt-automate-d6e41.firebaseapp.com/__/auth/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
