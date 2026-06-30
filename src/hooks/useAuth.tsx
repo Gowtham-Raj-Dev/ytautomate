@@ -108,8 +108,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const channel = await fetchMyChannel(newSession.accessToken);
         if (channel) {
-          await saveConnectedChannel(fbUser.uid, channel, refreshToken);
-          setProfile({ ...p, channel, refreshToken: refreshToken ?? undefined });
+          // Never pass Firebase Auth refresh token (starts with AMf-vBx) to the YouTube refresh token field
+          await saveConnectedChannel(fbUser.uid, channel, null);
+          setProfile({ ...p, channel });
         }
       } catch {
         // Non-fatal — channel can be (re)connected from Settings.
