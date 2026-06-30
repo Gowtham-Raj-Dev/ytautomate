@@ -49,28 +49,7 @@ export function DashboardHeader() {
       </div>
 
       <div className={styles.right}>
-        {channel ? (
-          <div className={styles.channel}>
-            {channel.thumbnail ? (
-              <Image
-                src={channel.thumbnail}
-                alt=""
-                width={28}
-                height={28}
-                className={styles.channelImg}
-                style={{ width: "auto", height: "auto" }}
-              />
-            ) : (
-              <span className={styles.channelDot} />
-            )}
-            <div className={styles.channelInfo}>
-              <span className={styles.channelName}>{channel.title}</span>
-              <span className={styles.live}>Connected</span>
-            </div>
-          </div>
-        ) : (
-          <span className={styles.notConnected}>No channel</span>
-        )}
+
 
         <div className={styles.menuWrap} ref={menuRef}>
           <button
