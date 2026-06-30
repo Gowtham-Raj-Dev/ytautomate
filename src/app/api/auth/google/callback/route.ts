@@ -20,7 +20,8 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const uid = searchParams.get("state");
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const siteUrl = rawSiteUrl.startsWith("http") ? rawSiteUrl : `https://${rawSiteUrl}`;
 
   if (!code || !uid) {
     console.error("Callback missing parameters. Code:", !!code, "UID:", !!uid);

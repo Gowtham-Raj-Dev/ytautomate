@@ -10,7 +10,8 @@ export async function GET(request: Request) {
     }
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const siteUrl = rawSiteUrl.startsWith("http") ? rawSiteUrl : `https://${rawSiteUrl}`;
     const redirectUri = `${siteUrl}/api/auth/google/callback`;
 
     const scopes = [
