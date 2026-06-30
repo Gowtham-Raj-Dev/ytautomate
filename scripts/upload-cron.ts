@@ -131,6 +131,20 @@ async function run() {
               status: "failed",
               error: err?.message || "Unknown error during YouTube API upload"
             });
+
+            // Delete storage file on failure to free up space
+            try {
+              if (upload.storagePath) {
+                const file = storage.file(upload.storagePath);
+                const [exists] = await file.exists();
+                if (exists) {
+                  await file.delete();
+                  console.log(`Cleaned up storage file on failure: ${upload.storagePath}`);
+                }
+              }
+            } catch (cleanupErr) {
+              console.error(`Failed to clean up storage file on failure:`, cleanupErr);
+            }
           }
         }
       }

@@ -13,6 +13,7 @@ import {
   getDocs,
   increment,
   serverTimestamp,
+  onSnapshot,
   type DocumentData,
 } from "firebase/firestore";
 import { db } from "@/firebase/config";
@@ -161,6 +162,22 @@ export async function getRecentUploads(
   );
   const snap = await getDocs(q);
   return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<UploadRecord, "id">) }));
+}
+
+export function subscribeToRecentUploads(
+  uid: string,
+  onUpdate: (uploads: UploadRecord[]) => void,
+  max = 20
+) {
+  const q = query(
+    collection(db, USERS, uid, UPLOADS),
+    orderBy("createdAt", "desc"),
+    limit(max)
+  );
+  return onSnapshot(q, (snap) => {
+    const uploads = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<UploadRecord, "id">) }));
+    onUpdate(uploads);
+  });
 }
 
 export async function deleteUserData(uid: string): Promise<void> {

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { RecentUploads } from "@/components/dashboard/RecentUploads";
 import { useAuth } from "@/hooks/useAuth";
-import { getRecentUploads } from "@/services/firestore";
+import { subscribeToRecentUploads } from "@/services/firestore";
 import { formatDate, formatBytes } from "@/lib/utils";
 import type { UploadRecord } from "@/types";
 import styles from "@/styles/Dashboard.module.css";
@@ -18,20 +18,12 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!user) return;
-    let active = true;
-    (async () => {
-      try {
-        const data = await getRecentUploads(user.uid);
-        if (active) setUploads(data);
-      } catch {
-        // ignore — empty list
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
+    setLoading(true);
+    const unsubscribe = subscribeToRecentUploads(user.uid, (data) => {
+      setUploads(data);
+      setLoading(false);
+    });
+    return () => unsubscribe();
   }, [user]);
 
   const lastUpload = uploads[0];

@@ -9,7 +9,8 @@ import {
   type ReactNode,
 } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
-import { auth } from "@/firebase/config";
+import { auth, db } from "@/firebase/config";
+import { doc, onSnapshot } from "firebase/firestore";
 import { signInWithGoogle, signOutUser } from "@/firebase/auth";
 import {
   ensureUserProfile,
@@ -70,22 +71,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Subscribe to Firebase auth state.
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (fbUser) => {
+    let unsubProfile: (() => void) | null = null;
+
+    const unsubAuth = onAuthStateChanged(auth, async (fbUser) => {
       setUser(fbUser);
       if (fbUser) {
-        const p = await ensureUserProfile({
+        await ensureUserProfile({
           uid: fbUser.uid,
           email: fbUser.email,
           displayName: fbUser.displayName,
           photoURL: fbUser.photoURL,
         });
-        setProfile(p);
+
+        // Set up real-time profile listener
+        unsubProfile = onSnapshot(doc(db, "users", fbUser.uid), (snap) => {
+          if (snap.exists()) {
+            setProfile(snap.data() as UserProfile);
+          }
+        });
       } else {
         setProfile(null);
+        if (unsubProfile) {
+          unsubProfile();
+          unsubProfile = null;
+        }
       }
       setLoading(false);
     });
-    return unsub;
+
+    return () => {
+      unsubAuth();
+      if (unsubProfile) {
+        unsubProfile();
+      }
+    };
   }, []);
 
   const signIn = useCallback(async () => {
