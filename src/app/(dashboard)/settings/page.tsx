@@ -23,16 +23,25 @@ export default function SettingsPage() {
 
   const channel = profile?.channel;
 
+  const [processedParams, setProcessedParams] = useState(false);
+
   useEffect(() => {
+    if (processedParams) return;
+
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get("connected") === "success") {
-      toast.success("YouTube channel connected successfully!");
-      router.replace("/settings");
-    } else if (urlParams.get("error")) {
-      toast.error(urlParams.get("error") || "Failed to connect channel");
+    const connected = urlParams.get("connected");
+    const error = urlParams.get("error");
+
+    if (connected === "success" || error) {
+      setProcessedParams(true);
+      if (connected === "success") {
+        toast.success("YouTube channel connected successfully!");
+      } else {
+        toast.error(error || "Failed to connect channel");
+      }
       router.replace("/settings");
     }
-  }, [router, toast]);
+  }, [router, toast, processedParams]);
 
   const handleReconnect = () => {
     if (!user) return;
