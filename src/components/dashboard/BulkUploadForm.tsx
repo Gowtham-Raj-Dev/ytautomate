@@ -151,58 +151,6 @@ export function BulkUploadForm() {
     toast.success("Titles applied successfully!");
   };
 
-  const generateAIContent = async () => {
-    if (!aiTopic.trim()) {
-      toast.error("Please enter a topic for AI");
-      return;
-    }
-    setGeneratingAi(true);
-    try {
-      let prompt = "";
-      if (aiMode === "title") {
-        prompt = `You are an expert YouTube strategist. I need ${items.length || 10} catchy, highly engaging, and viral-worthy YouTube Shorts titles for the topic: "${aiTopic}". 
-        Rules:
-        - Only return the titles, one per line. Do not wrap in markdown or JSON.
-        - Each title should be around 70 to 90 characters long for maximum impact.
-        - Use emojis if they fit naturally.`;
-      } else {
-        prompt = `You are an expert YouTube strategist. Complete this request exactly: "${aiTopic}".
-        Rules:
-        - Create a highly optimized YouTube description and/or hashtags.
-        - Do not output markdown code blocks (like \`\`\`text), just plain text.
-        - Add clean spacing and emojis where appropriate.`;
-      }
-
-      const res = await fetch("/api/generate-content", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt })
-      });
-      const data = await res.json();
-      
-      if (!res.ok) {
-        if (data.error === "LIMIT_REACHED") {
-          setLimitReached(true);
-          return;
-        }
-        throw new Error(data.message || data.error);
-      }
-      
-      let formatted = data.text;
-      if (aiMode === "title") {
-        const rawLines = formatted.split("\n").map((t: string) => t.trim()).filter(Boolean);
-        formatted = rawLines.map((t: string, i: number) => `${i + 1}. ${t.replace(/^\d+[\.\-\)]\s*/, "")}`).join('\n\n');
-      }
-      
-      setBulkTitlesInput(formatted);
-      toast.success("AI generated content successfully!");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to generate content. Did you add GEMINI_API_KEY?");
-    } finally {
-      setGeneratingAi(false);
-    }
-  };
-
   const handleBulkUpload = async () => {
     if (!user || itemsRef.current.length === 0) return;
     setUploading(true);
@@ -334,12 +282,6 @@ export function BulkUploadForm() {
               <label style={{ flex: 1, minWidth: "200px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
                   <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>Description</span>
-                  <button 
-                    onClick={() => { setAiMode("description"); setAiTopic("I need 100 hashtags and a 300 word description about..."); }} 
-                    style={{ fontSize: "0.75rem", background: "transparent", border: "none", color: "var(--primary)", cursor: "pointer", fontWeight: 600 }}
-                  >
-                    ✨ Generate with AI
-                  </button>
                 </div>
                 <textarea 
                   value={globalDesc} 
@@ -449,6 +391,7 @@ export function BulkUploadForm() {
       </div>
 
       {/* Right Card: AI Title Studio */}
+           {/* Right Card: Bulk Metadata Studio */}
       <div 
         className={styles.card} 
         style={{ 
@@ -464,65 +407,41 @@ export function BulkUploadForm() {
         }}
       >
         <h4 style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--primary)", display: "flex", alignItems: "center", gap: "8px" }}>
-          ✨ AI Title Studio
+          📋 Bulk Metadata Studio
         </h4>
         <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
           {items.length > 0 
-            ? `Generate highly engaging, viral titles for your ${items.length} videos in one click!` 
-            : "Generate highly engaging, viral titles for your videos!"}
+            ? `Paste your titles (one per line) or description to apply to your ${items.length} videos at once.` 
+            : "Paste your titles (one per line) or description to apply to your videos."}
         </span>
             
-            <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
+            <div style={{ display: "flex", gap: "12px", marginBottom: "8px" }}>
               <button 
                 onClick={() => setAiMode("title")}
                 style={{ flex: 1, padding: "8px", borderRadius: "8px", border: "none", background: aiMode === "title" ? "var(--primary)" : "var(--bg)", color: aiMode === "title" ? "#fff" : "var(--text-secondary)", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}
               >
-                Titles
+                Titles (One per line)
               </button>
               <button 
                 onClick={() => setAiMode("description")}
                 style={{ flex: 1, padding: "8px", borderRadius: "8px", border: "none", background: aiMode === "description" ? "var(--primary)" : "var(--bg)", color: aiMode === "description" ? "#fff" : "var(--text-secondary)", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}
               >
-                Descriptions & Tags
+                Description
               </button>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", background: "var(--bg)", padding: "12px", borderRadius: "8px", border: "1px dashed var(--border)" }}>
-              <span style={{ fontSize: "0.85rem", fontWeight: 500 }}>
-                {aiMode === "title" ? "What are these videos about?" : "What do you want the description/hashtags to say?"}
-              </span>
-              <input 
-                type="text" 
-                value={aiTopic}
-                onChange={(e) => setAiTopic(e.target.value)}
-                placeholder={aiMode === "title" ? "e.g. Funny cat compilation..." : "e.g. 100 hashtags about cars and a 300 words description"}
-                className={styles.input}
-                style={{ width: "100%", padding: "8px" }}
-                disabled={generatingAi || uploading}
-              />
-              <Button 
-                onClick={generateAIContent} 
-                loading={generatingAi}
-                disabled={uploading || !aiTopic.trim()}
-                variant="secondary"
-                style={{ width: "100%", marginTop: "4px" }}
-              >
-                Generate {aiMode === "title" ? `${items.length || 10} Titles` : "Content"}
-              </Button>
-            </div>
-
-            <div style={{ borderTop: "1px solid var(--border)", paddingTop: "16px", flex: 1, display: "flex", flexDirection: "column" }}>
+            <div style={{ paddingTop: "8px", flex: 1, display: "flex", flexDirection: "column" }}>
               <span style={{ display: "block", fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "8px" }}>
-                <strong>AI Output:</strong> Review your {aiMode}s below and apply them.
+                <strong>Paste Content Below:</strong>
               </span>
               <div style={{ display: "flex", flexDirection: "column", gap: "12px", flex: 1 }}>
                 <textarea 
                   value={bulkTitlesInput} 
                   onChange={(e) => setBulkTitlesInput(e.target.value)}
-                  placeholder="AI output will appear here..."
+                  placeholder={aiMode === "title" ? "Example:\nFunny Cat Video 1\nFunny Cat Video 2\nFunny Cat Video 3" : "Paste the global description/hashtags here..."}
                   disabled={uploading}
                   className={styles.input}
-                  style={{ width: "100%", padding: "8px", minHeight: "150px", flex: 1, resize: "vertical" }}
+                  style={{ width: "100%", padding: "12px", minHeight: "220px", flex: 1, resize: "vertical", fontFamily: "inherit" }}
                 />
                 <Button 
                   onClick={applyBulkTitles} 
@@ -534,19 +453,6 @@ export function BulkUploadForm() {
               </div>
             </div>
           </div>
-
-      {/* Limit Reached Modal */}
-      {limitReached && (
-        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", background: "rgba(0,0,0,0.8)", zIndex: 9999, display: "flex", justifyContent: "center", alignItems: "center" }}>
-          <div style={{ background: "var(--surface-2)", padding: "32px", borderRadius: "12px", textAlign: "center", maxWidth: "400px", border: "1px solid var(--border)" }}>
-             <h2 style={{ fontSize: "1.5rem", marginBottom: "16px", color: "var(--error)" }}>AI Limit Reached 🚫</h2>
-             <p style={{ color: "var(--text-secondary)", marginBottom: "24px", lineHeight: 1.5 }}>
-               You have reached your daily Gemini AI API limit. Please come back tomorrow to generate more content!
-             </p>
-             <Button onClick={() => setLimitReached(false)} style={{ width: "100%" }}>Understood</Button>
-          </div>
-        </div>
-      )}
 
       {/* General Error Popup Modal */}
       {errorModal.isOpen && (

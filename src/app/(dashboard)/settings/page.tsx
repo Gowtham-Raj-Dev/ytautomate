@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -23,16 +23,21 @@ export default function SettingsPage() {
 
   const channel = profile?.channel;
 
-  const handleReconnect = async () => {
-    setBusy("reconnect");
-    try {
-      await signIn();
-      toast.success("Channel reconnected!");
-    } catch (err) {
-      toast.error(errorMessage(err));
-    } finally {
-      setBusy(null);
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("connected") === "success") {
+      toast.success("YouTube channel connected successfully!");
+      router.replace("/settings");
+    } else if (urlParams.get("error")) {
+      toast.error(urlParams.get("error") || "Failed to connect channel");
+      router.replace("/settings");
     }
+  }, [router, toast]);
+
+  const handleReconnect = () => {
+    if (!user) return;
+    setBusy("reconnect");
+    window.location.href = `/api/auth/google/connect?uid=${user.uid}`;
   };
 
   const handleDisconnect = async () => {
