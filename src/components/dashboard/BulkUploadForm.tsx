@@ -42,7 +42,7 @@ const SUGGESTED_TAGS = [
 // Cache variables to preserve state across client-side navigation
 let cachedItems: BulkFileItem[] = [];
 let cachedGlobalDesc = `📥 Download this video in Full HD for FREE:
-👉 https://downloader.codelove.in/video?url={video_url}
+👉 https://downloader.codelove.in/youtube?url={video_url}
 
 ✨ You can use this AI video for free in your Reels, Shorts, TikToks, or YouTube videos. No copyright, 100% free!
 

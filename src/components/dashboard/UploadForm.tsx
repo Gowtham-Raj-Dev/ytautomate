@@ -38,7 +38,7 @@ interface UploadFormProps {
 let cachedFile: File | null = null;
 let cachedTitle = "";
 let cachedDesc = `📥 Download this video in Full HD for FREE:
-👉 https://downloader.codelove.in/video?url={video_url}
+👉 https://downloader.codelove.in/youtube?url={video_url}
 
 ✨ You can use this AI video for free in your Reels, Shorts, TikToks, or YouTube videos. No copyright, 100% free!
 
