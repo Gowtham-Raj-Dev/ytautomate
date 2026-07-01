@@ -229,7 +229,7 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
             .replace(/{videoId}/g, result.videoId);
 
           try {
-            await fetch(`/api/youtube/update-description`, {
+            const updateRes = await fetch(`/api/youtube/update-description`, {
               method: "POST",
               headers: {
                 Authorization: `Bearer ${session.accessToken}`,
@@ -241,8 +241,15 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
                 description: updatedDescription,
               }),
             });
-          } catch (e) {
+            
+            if (!updateRes.ok) {
+              const errData = await updateRes.json().catch(() => ({}));
+              console.error("Failed to update description via API route:", errData.error);
+              toast.error(`Video uploaded, but description update failed: ${errData.error || "Unknown error"}`);
+            }
+          } catch (e: any) {
             console.error("Failed to update description on YouTube via API route:", e);
+            toast.error(`Failed to update video description: ${e.message}`);
           }
         }
 
