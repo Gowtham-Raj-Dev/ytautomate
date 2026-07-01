@@ -48,7 +48,7 @@ let cachedGlobalDesc = `📥 Download this video in Full HD for FREE:
 
 🔔 Subscribe to our channel for daily free AI video resources, green screen templates, and stunning backgrounds!
 
-#Shorts #AIVideo #FreeStockFootage #GreenScreen #ViralAI`;
+#shorts #aivideo #freestockfootage #greenscreen #viralaI`;
 let cachedGlobalVis: Visibility = "public";
 let cachedBulkTitlesInput = "";
 let cachedAiTopic = "";

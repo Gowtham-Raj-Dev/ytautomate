@@ -225,7 +225,7 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
         
         if (hasPlaceholder && result.videoId) {
           updatedDescription = updatedDescription
-            .replace(/{video_url}/g, `https://youtu.be/${result.videoId}`)
+            .replace(/{video_url}/g, `https://www.youtube.com/watch?v=${result.videoId}`)
             .replace(/{videoId}/g, result.videoId);
 
           try {
