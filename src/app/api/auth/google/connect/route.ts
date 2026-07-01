@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       "openid",
       "email",
       "profile",
-      "https://www.googleapis.com/auth/youtube.upload",
+      "https://www.googleapis.com/auth/youtube",
       "https://www.googleapis.com/auth/youtube.readonly"
     ];
 
