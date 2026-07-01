@@ -229,23 +229,20 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
             .replace(/{videoId}/g, result.videoId);
 
           try {
-            await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet`, {
-              method: "PUT",
+            await fetch(`/api/youtube/update-description`, {
+              method: "POST",
               headers: {
                 Authorization: `Bearer ${session.accessToken}`,
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                id: result.videoId,
-                snippet: {
-                  title: title.trim(),
-                  description: updatedDescription,
-                  categoryId: "22",
-                },
+                videoId: result.videoId,
+                title: title.trim(),
+                description: updatedDescription,
               }),
             });
           } catch (e) {
-            console.error("Failed to update description on YouTube (client-side):", e);
+            console.error("Failed to update description on YouTube via API route:", e);
           }
         }
 
