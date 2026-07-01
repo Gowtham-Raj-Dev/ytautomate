@@ -105,12 +105,39 @@ async function run() {
             });
 
             const videoId = res.data.id;
+            const snippet = res.data.snippet;
             console.log(`Successfully uploaded video: ${videoId}`);
+
+            let updatedDescription = upload.description || "";
+            const hasPlaceholder = updatedDescription.includes("{video_url}") || updatedDescription.includes("{videoId}");
+            
+            if (hasPlaceholder && videoId && snippet) {
+              updatedDescription = updatedDescription
+                .replace(/{video_url}/g, `https://youtu.be/${videoId}`)
+                .replace(/{videoId}/g, videoId);
+              
+              console.log(`Placeholder found. Updating description on YouTube...`);
+              snippet.description = updatedDescription;
+              
+              try {
+                await youtube.videos.update({
+                  part: ['snippet'],
+                  requestBody: {
+                    id: videoId,
+                    snippet: snippet
+                  }
+                });
+                console.log(`Successfully updated description on YouTube!`);
+              } catch (updateErr: any) {
+                console.error(`Failed to update description on YouTube:`, updateErr?.message || updateErr);
+              }
+            }
 
             // Update record
             await uploadDoc.ref.update({
               status: "completed",
               videoId: videoId || "",
+              description: updatedDescription
             });
 
             // Update user stats

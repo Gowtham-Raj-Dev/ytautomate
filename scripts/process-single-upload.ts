@@ -93,12 +93,39 @@ async function run() {
     });
 
     const videoId = res.data.id;
+    const snippet = res.data.snippet;
     console.log(`[16] Successfully uploaded video! YouTube Video ID: ${videoId}`);
+
+    let updatedDescription = upload.description || "";
+    const hasPlaceholder = updatedDescription.includes("{video_url}") || updatedDescription.includes("{videoId}");
+    
+    if (hasPlaceholder && videoId && snippet) {
+      updatedDescription = updatedDescription
+        .replace(/{video_url}/g, `https://youtu.be/${videoId}`)
+        .replace(/{videoId}/g, videoId);
+      
+      console.log(`[16.5] Placeholder found. Updating description on YouTube...`);
+      snippet.description = updatedDescription;
+      
+      try {
+        await youtube.videos.update({
+          part: ['snippet'],
+          requestBody: {
+            id: videoId,
+            snippet: snippet
+          }
+        });
+        console.log(`[16.6] Successfully updated description on YouTube!`);
+      } catch (updateErr: any) {
+        console.error(`[ERROR] Failed to update description on YouTube:`, updateErr?.message || updateErr);
+      }
+    }
 
     console.log("[17] Updating upload record in Firestore...");
     await uploadRef.update({
       status: "completed",
       videoId: videoId || "",
+      description: updatedDescription
     });
 
     console.log("[18] Deleting file from Firebase Storage...");

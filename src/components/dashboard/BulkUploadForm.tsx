@@ -41,7 +41,14 @@ const SUGGESTED_TAGS = [
 
 // Cache variables to preserve state across client-side navigation
 let cachedItems: BulkFileItem[] = [];
-let cachedGlobalDesc = "#Shorts";
+let cachedGlobalDesc = `📥 Download this video in Full HD for FREE:
+👉 https://downloader.codelove.in/video?url={video_url}
+
+✨ You can use this AI video for free in your Reels, Shorts, TikToks, or YouTube videos. No copyright, 100% free!
+
+🔔 Subscribe to our channel for daily free AI video resources, green screen templates, and stunning backgrounds!
+
+#Shorts #AIVideo #FreeStockFootage #GreenScreen #ViralAI`;
 let cachedGlobalVis: Visibility = "public";
 let cachedBulkTitlesInput = "";
 let cachedAiTopic = "";

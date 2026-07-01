@@ -37,7 +37,14 @@ interface UploadFormProps {
 // Cache variables to preserve state across client-side navigation
 let cachedFile: File | null = null;
 let cachedTitle = "";
-let cachedDesc = "";
+let cachedDesc = `📥 Download this video in Full HD for FREE:
+👉 https://downloader.codelove.in/video?url={video_url}
+
+✨ You can use this AI video for free in your Reels, Shorts, TikToks, or YouTube videos. No copyright, 100% free!
+
+🔔 Subscribe to our channel for daily free AI video resources, green screen templates, and stunning backgrounds!
+
+#Shorts #AIVideo #FreeStockFootage #GreenScreen #ViralAI`;
 let cachedVis: Visibility = "public";
 let cachedScheduledAt = "";
 let cachedAiTopicSingle = "";
@@ -213,10 +220,40 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
           signal: controller.signal,
         });
 
+        let updatedDescription = description.trim();
+        const hasPlaceholder = updatedDescription.includes("{video_url}") || updatedDescription.includes("{videoId}");
+        
+        if (hasPlaceholder && result.videoId) {
+          updatedDescription = updatedDescription
+            .replace(/{video_url}/g, `https://youtu.be/${result.videoId}`)
+            .replace(/{videoId}/g, result.videoId);
+
+          try {
+            await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet`, {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${session.accessToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                id: result.videoId,
+                snippet: {
+                  title: title.trim(),
+                  description: updatedDescription,
+                  categoryId: "22",
+                },
+              }),
+            });
+          } catch (e) {
+            console.error("Failed to update description on YouTube (client-side):", e);
+          }
+        }
+
         await updateUploadRecord(user.uid, recordId, {
           status: "completed",
           videoId: result.videoId,
           thumbnail: result.thumbnail,
+          description: updatedDescription
         });
         await incrementUploadCount(user.uid);
         await refreshProfile();
