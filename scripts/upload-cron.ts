@@ -113,7 +113,7 @@ async function run() {
             
             if (hasPlaceholder && videoId && snippet) {
               updatedDescription = updatedDescription
-                .replace(/{video_url}/g, `https://www.youtube.com/watch?v=${videoId}`)
+                .replace(/{video_url}/g, `https://youtu.be/${videoId}`)
                 .replace(/{videoId}/g, videoId);
               
               console.log(`Placeholder found. Updating description on YouTube...`);
