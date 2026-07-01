@@ -15,6 +15,7 @@ export default function DashboardPage() {
   const { user, profile } = useAuth();
   const [uploads, setUploads] = useState<UploadRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploadsLimit, setUploadsLimit] = useState(50);
 
   useEffect(() => {
     if (!user) return;
@@ -22,9 +23,9 @@ export default function DashboardPage() {
     const unsubscribe = subscribeToRecentUploads(user.uid, (data) => {
       setUploads(data);
       setLoading(false);
-    });
+    }, uploadsLimit);
     return () => unsubscribe();
-  }, [user]);
+  }, [user, uploadsLimit]);
 
   const lastUpload = uploads[0];
   const channel = profile?.channel;
@@ -112,7 +113,12 @@ export default function DashboardPage() {
         transition={{ duration: 0.5, delay: 0.2 }}
         className={styles.contentCard}
       >
-        <RecentUploads uploads={uploads} loading={loading} />
+        <RecentUploads 
+          uploads={uploads} 
+          loading={loading} 
+          limit={uploadsLimit} 
+          onLimitChange={setUploadsLimit} 
+        />
       </motion.div>
     </div>
   );

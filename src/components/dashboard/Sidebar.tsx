@@ -16,13 +16,18 @@ const navLinks = [
   { name: "Settings", path: "/settings", icon: <MdSettings /> },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className={styles.sidebar}>
+    <aside className={cx(styles.sidebar, isOpen && styles.sidebarActive)}>
       <div className={styles.logoWrap}>
-        <Logo href="/" />
+        <Logo href="/" onClick={onClose} />
       </div>
       
       <nav className={styles.nav}>
@@ -33,6 +38,7 @@ export function Sidebar() {
               key={link.path}
               href={link.path}
               className={cx(styles.link, isActive && styles.active)}
+              onClick={onClose}
             >
               <span className={styles.icon}>{link.icon}</span>
               <span className={styles.label}>{link.name}</span>

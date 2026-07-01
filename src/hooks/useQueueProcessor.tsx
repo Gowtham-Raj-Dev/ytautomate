@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/firebase/config";
 import { useAuth } from "./useAuth";
-import { updateUploadRecord, incrementUploadCount, updateStatsOnYouTubePostAndFirebaseDelete, deleteUploadRecord } from "@/services/firestore";
+import { updateUploadRecord, incrementUploadCount, updateStatsOnYouTubePostAndFirebaseDelete, deleteUploadRecord, updateStatsOnFailureAndDelete } from "@/services/firestore";
 import { uploadShort } from "@/services/youtube";
 import { deleteVideoFromStorage } from "@/services/storage";
 import { useToast } from "./useToast";
@@ -79,6 +79,17 @@ export function useQueueProcessor() {
               status: "failed",
               error: err.message || "Failed to process scheduled upload",
             });
+            
+            try {
+              if (record.storagePath) {
+                await deleteVideoFromStorage(record.storagePath);
+                await updateStatsOnFailureAndDelete(user.uid, record.fileSize);
+                await refreshProfile();
+              }
+            } catch (cleanupErr) {
+              console.error("Failed to clean up storage/stats after upload failure:", cleanupErr);
+            }
+
             toast.error(`Failed to upload scheduled video: ${record.title}`);
           }
         }

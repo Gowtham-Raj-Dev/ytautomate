@@ -13,6 +13,24 @@
   align-items: center;
 }
 
+.menuBtn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #a1a1aa;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.menuBtn:hover {
+  background: #18181b;
+  color: #fff;
+}
+
 .right {
   display: flex;
   align-items: center;
@@ -255,6 +273,15 @@
 .modalConfirmBtn:hover {
   background: #dc2626;
   transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0 16px;
+  }
+  .menuBtn {
+    display: flex;
+  }
 }
 
 @media (max-width: 640px) {

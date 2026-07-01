@@ -101,7 +101,22 @@
 
 @media (max-width: 720px) {
   .stats {
-    grid-template-columns: 1fr;
-    gap: 16px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .statCard {
+    padding: 16px;
+    gap: 12px;
+  }
+  .statCard:nth-child(5) {
+    grid-column: span 2;
+  }
+  .statIcon {
+    width: 44px;
+    height: 44px;
+    font-size: 1.2rem;
+  }
+  .statValue {
+    font-size: 1.3rem;
   }
 }

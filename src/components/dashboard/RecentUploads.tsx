@@ -20,9 +20,11 @@ const STATUS_META: Record<UploadStatus, { label: string; className: string }> = 
 interface RecentUploadsProps {
   uploads: UploadRecord[];
   loading: boolean;
+  limit: number;
+  onLimitChange: (limit: number) => void;
 }
 
-export function RecentUploads({ uploads, loading }: RecentUploadsProps) {
+export function RecentUploads({ uploads, loading, limit, onLimitChange }: RecentUploadsProps) {
   const [activeSubTab, setActiveSubTab] = useState<"single" | "bulk">("single");
 
   const filteredUploads = uploads.filter((u) => {
@@ -41,7 +43,30 @@ export function RecentUploads({ uploads, loading }: RecentUploadsProps) {
       <div className={styles.head} style={{ flexDirection: "column", alignItems: "stretch", gap: "16px", marginBottom: "24px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h2 className={styles.title}>Recent uploads</h2>
-          <span className={styles.count}>{uploads.length} total</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span className={styles.count}>{uploads.length} total</span>
+            <select
+              value={limit}
+              onChange={(e) => onLimitChange(Number(e.target.value))}
+              style={{
+                background: "var(--surface-2)",
+                border: "1px solid var(--border)",
+                color: "var(--text)",
+                padding: "6px 12px",
+                borderRadius: "6px",
+                fontSize: "0.8rem",
+                cursor: "pointer",
+                outline: "none",
+                fontWeight: 600
+              }}
+            >
+              <option value={20}>Show 20</option>
+              <option value={50}>Show 50</option>
+              <option value={100}>Show 100</option>
+              <option value={200}>Show 200</option>
+              <option value={500}>Show 500</option>
+            </select>
+          </div>
         </div>
         
         <div style={{ display: "flex", gap: "12px", borderBottom: "1px solid var(--border)", paddingBottom: "8px" }}>

@@ -6,10 +6,14 @@ import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/useToast";
 import { cx } from "@/lib/utils";
-import { MdLogout } from "react-icons/md";
+import { MdLogout, MdMenu } from "react-icons/md";
 import styles from "@/styles/DashboardHeader.module.css";
 
-export function DashboardHeader() {
+interface DashboardHeaderProps {
+  onToggleSidebar: () => void;
+}
+
+export function DashboardHeader({ onToggleSidebar }: DashboardHeaderProps) {
   const { user, profile, signOut } = useAuth();
   const router = useRouter();
   const toast = useToast();
@@ -45,7 +49,13 @@ export function DashboardHeader() {
   return (
     <header className={styles.header}>
       <div className={styles.left}>
-        {/* Can put a mobile menu toggle here */}
+        <button 
+          className={styles.menuBtn} 
+          onClick={onToggleSidebar}
+          aria-label="Open menu"
+        >
+          <MdMenu size={26} />
+        </button>
       </div>
 
       <div className={styles.right}>

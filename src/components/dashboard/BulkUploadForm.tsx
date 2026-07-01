@@ -10,7 +10,7 @@ import { createUploadRecord, updateStatsOnFirebaseUpload } from "@/services/fire
 import { validateVideoFile, formatBytes, errorMessage } from "@/lib/utils";
 import { generateScheduleDates, generateTitleFromFilename } from "@/lib/scheduleUtils";
 import type { Visibility, WeeklySchedule } from "@/types";
-import { MdUploadFile, MdPlayArrow, MdOutlineCheckCircle, MdError } from "react-icons/md";
+import { MdUploadFile, MdPlayArrow, MdOutlineCheckCircle, MdError, MdRefresh } from "react-icons/md";
 import styles from "@/styles/Upload.module.css";
 
 const DEFAULT_SCHEDULE: WeeklySchedule = {
@@ -53,6 +53,8 @@ let cachedGlobalVis: Visibility = "public";
 let cachedBulkTitlesInput = "";
 let cachedAiTopic = "";
 let cachedAiMode: "title" | "description" = "title";
+let cachedShowProgressBox = false;
+let cachedIsCollapsed = false;
 
 export function BulkUploadForm() {
   const { user, profile } = useAuth();
@@ -68,6 +70,8 @@ export function BulkUploadForm() {
   const [limitReached, setLimitReached] = useState(false);
   const [generatingAi, setGeneratingAi] = useState(false);
   const [errorModal, setErrorModal] = useState<{isOpen: boolean, message: string, title?: string}>({isOpen: false, message: ""});
+  const [showProgressBox, setShowProgressBox] = useState(cachedShowProgressBox);
+  const [isCollapsed, setIsCollapsed] = useState(cachedIsCollapsed);
   
   const cancelRef = useRef(false);
 
@@ -83,7 +87,9 @@ export function BulkUploadForm() {
     cachedBulkTitlesInput = bulkTitlesInput;
     cachedAiTopic = aiTopic;
     cachedAiMode = aiMode;
-  }, [items, globalDesc, globalVis, bulkTitlesInput, aiTopic, aiMode]);
+    cachedShowProgressBox = showProgressBox;
+    cachedIsCollapsed = isCollapsed;
+  }, [items, globalDesc, globalVis, bulkTitlesInput, aiTopic, aiMode, showProgressBox, isCollapsed]);
 
   const handleFolderSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -158,10 +164,77 @@ export function BulkUploadForm() {
     toast.success("Titles applied successfully!");
   };
 
+  const uploadSingleItem = async (i: number) => {
+    if (!user) return false;
+    
+    setItems(prev => {
+      const copy = [...prev];
+      copy[i] = { ...copy[i], status: "uploading", progress: 0 };
+      return copy;
+    });
+
+    try {
+      const currentItem = itemsRef.current[i];
+      const validation = validateVideoFile(currentItem.file);
+      if (!validation.valid) throw new Error(validation.error);
+
+      const result = await uploadVideoToStorage(currentItem.file, user.uid, (p) => {
+        setItems(prev => {
+          const copy = [...prev];
+          copy[i] = { ...copy[i], progress: p };
+          return copy;
+        });
+      });
+
+      const latestItem = itemsRef.current[i];
+      
+      await createUploadRecord({
+        uid: user.uid,
+        videoId: null,
+        title: latestItem.title,
+        description: latestItem.description,
+        visibility: latestItem.visibility,
+        status: "scheduled",
+        thumbnail: null,
+        fileName: latestItem.file.name,
+        fileSize: latestItem.file.size,
+        createdAt: Date.now(),
+        scheduledAt: latestItem.scheduledAt || null,
+        fileUrl: result.url,
+        storagePath: result.path,
+        error: null,
+        uploadType: "bulk",
+      });
+
+      await updateStatsOnFirebaseUpload(user.uid, latestItem.file.size);
+
+      setItems(prev => {
+        const copy = [...prev];
+        copy[i] = { ...copy[i], status: "success", progress: 100 };
+        return copy;
+      });
+
+      return true;
+
+    } catch (err: any) {
+      setItems(prev => {
+        const copy = [...prev];
+        copy[i] = { ...copy[i], status: "error" };
+        return copy;
+      });
+      const msg = errorMessage(err);
+      toast.error(`Failed to upload ${itemsRef.current[i].file.name}`);
+      setErrorModal({ isOpen: true, title: "Upload Error", message: `Failed to upload ${itemsRef.current[i].file.name}:\n\n${msg}` });
+      return false;
+    }
+  };
+
   const handleBulkUpload = async () => {
     if (!user || itemsRef.current.length === 0) return;
     setUploading(true);
     cancelRef.current = false;
+    setShowProgressBox(true);
+    setIsCollapsed(false);
 
     for (let i = 0; i < itemsRef.current.length; i++) {
       if (cancelRef.current) {
@@ -171,66 +244,7 @@ export function BulkUploadForm() {
       
       if (itemsRef.current[i].status === "success") continue;
 
-      setItems(prev => {
-        const copy = [...prev];
-        copy[i] = { ...copy[i], status: "uploading" };
-        return copy;
-      });
-
-      try {
-        const currentItem = itemsRef.current[i];
-        const validation = validateVideoFile(currentItem.file);
-        if (!validation.valid) throw new Error(validation.error);
-
-        const result = await uploadVideoToStorage(currentItem.file, user.uid, (p) => {
-          setItems(prev => {
-            const copy = [...prev];
-            copy[i] = { ...copy[i], progress: p };
-            return copy;
-          });
-        });
-
-        // Get latest item safely without putting side-effects inside setState
-        const latestItem = itemsRef.current[i];
-        
-        await createUploadRecord({
-          uid: user.uid,
-          videoId: null,
-          title: latestItem.title,
-          description: latestItem.description,
-          visibility: latestItem.visibility,
-          status: "scheduled",
-          thumbnail: null,
-          fileName: latestItem.file.name,
-          fileSize: latestItem.file.size,
-          createdAt: Date.now(),
-          scheduledAt: latestItem.scheduledAt || null,
-          fileUrl: result.url,
-          storagePath: result.path,
-          error: null,
-          uploadType: "bulk",
-        });
-
-        await updateStatsOnFirebaseUpload(user.uid, latestItem.file.size);
-
-        setItems(prev => {
-          const copy = [...prev];
-          copy[i] = { ...copy[i], status: "success", progress: 100 };
-          return copy;
-        });
-
-      } catch (err: any) {
-        setItems(prev => {
-          const copy = [...prev];
-          copy[i] = { ...copy[i], status: "error" };
-          return copy;
-        });
-        const msg = errorMessage(err);
-        toast.error(`Failed to upload ${itemsRef.current[i].file.name}`);
-        setErrorModal({ isOpen: true, title: "Upload Error", message: `Failed to upload ${itemsRef.current[i].file.name}:\n\n${msg}` });
-        
-        // Pause or break on error? We'll just continue to the next one, but they can see the modal.
-      }
+      await uploadSingleItem(i);
     }
 
     setUploading(false);
@@ -239,9 +253,30 @@ export function BulkUploadForm() {
     }
   };
 
+  const handleRetryItem = async (index: number) => {
+    if (uploading) return;
+    setUploading(true);
+    cancelRef.current = false;
+    setShowProgressBox(true);
+    
+    await uploadSingleItem(index);
+    
+    setUploading(false);
+  };
+
   const handleCancel = () => {
     cancelRef.current = true;
   };
+
+  const totalCount = items.length;
+  const successCount = items.filter(item => item.status === "success").length;
+  const errorCount = items.filter(item => item.status === "error").length;
+  const uploadingItemIdx = items.findIndex(item => item.status === "uploading");
+  const uploadingItemProgress = uploadingItemIdx !== -1 ? items[uploadingItemIdx].progress : 0;
+  
+  const overallPercent = totalCount > 0 
+    ? Math.round(((successCount + errorCount + (uploadingItemProgress / 100)) / totalCount) * 100)
+    : 0;
 
   return (
     <div style={{ display: "flex", gap: "24px", alignItems: "flex-start", flexWrap: "wrap", width: "100%" }}>
@@ -278,7 +313,7 @@ export function BulkUploadForm() {
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ fontSize: "1rem", fontWeight: 600 }}>{items.length} Videos ready</h3>
-            <Button variant="ghost" onClick={() => !uploading && setItems([])} disabled={uploading}>
+            <Button variant="ghost" onClick={() => { if (!uploading) { setItems([]); setShowProgressBox(false); } }} disabled={uploading}>
               Clear
             </Button>
           </div>
@@ -366,7 +401,29 @@ export function BulkUploadForm() {
                       <div style={{ fontSize: "0.8rem", color: "var(--primary)", fontWeight: 600 }}>{item.progress}%</div>
                     )}
                     {item.status === "success" && <MdOutlineCheckCircle size={20} color="var(--success)" />}
-                    {item.status === "error" && <MdError size={20} color="var(--error)" />}
+                    {item.status === "error" && (
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <MdError size={20} color="var(--error)" title="Upload failed" />
+                        <button
+                          onClick={() => handleRetryItem(idx)}
+                          disabled={uploading}
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            color: "var(--primary)",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            padding: "4px",
+                            borderRadius: "4px"
+                          }}
+                          title="Retry upload"
+                        >
+                          <MdRefresh size={18} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -397,69 +454,230 @@ export function BulkUploadForm() {
         )}
       </div>
 
-      {/* Right Card: AI Title Studio */}
-           {/* Right Card: Bulk Metadata Studio */}
+      {/* Right Column Container */}
       <div 
-        className={styles.card} 
         style={{ 
           width: "420px", 
           flexShrink: 0, 
-          margin: 0, 
           display: "flex", 
           flexDirection: "column", 
-          gap: "16px",
-          opacity: items.length === 0 ? 0.4 : 1,
-          pointerEvents: items.length === 0 ? "none" : "auto",
-          transition: "opacity 0.3s ease"
+          gap: "24px",
+          margin: 0
         }}
       >
-        <h4 style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--primary)", display: "flex", alignItems: "center", gap: "8px" }}>
-          📋 Bulk Metadata Studio
-        </h4>
-        <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
-          {items.length > 0 
-            ? `Paste your titles (one per line) or description to apply to your ${items.length} videos at once.` 
-            : "Paste your titles (one per line) or description to apply to your videos."}
-        </span>
-            
-            <div style={{ display: "flex", gap: "12px", marginBottom: "8px" }}>
-              <button 
-                onClick={() => setAiMode("title")}
-                style={{ flex: 1, padding: "8px", borderRadius: "8px", border: "none", background: aiMode === "title" ? "var(--primary)" : "var(--bg)", color: aiMode === "title" ? "#fff" : "var(--text-secondary)", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}
-              >
-                Titles (One per line)
-              </button>
-              <button 
-                onClick={() => setAiMode("description")}
-                style={{ flex: 1, padding: "8px", borderRadius: "8px", border: "none", background: aiMode === "description" ? "var(--primary)" : "var(--bg)", color: aiMode === "description" ? "#fff" : "var(--text-secondary)", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}
-              >
-                Description
-              </button>
-            </div>
+        {/* Bulk Metadata Studio */}
+        <div 
+          className={styles.card} 
+          style={{ 
+            width: "100%", 
+            margin: 0, 
+            display: "flex", 
+            flexDirection: "column", 
+            gap: "16px",
+            opacity: items.length === 0 ? 0.4 : 1,
+            pointerEvents: items.length === 0 ? "none" : "auto",
+            transition: "opacity 0.3s ease"
+          }}
+        >
+          <h4 style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--primary)", display: "flex", alignItems: "center", gap: "8px" }}>
+            📋 Bulk Metadata Studio
+          </h4>
+          <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+            {items.length > 0 
+              ? `Paste your titles (one per line) or description to apply to your ${items.length} videos at once.` 
+              : "Paste your titles (one per line) or description to apply to your videos."}
+          </span>
+              
+          <div style={{ display: "flex", gap: "12px", marginBottom: "8px" }}>
+            <button 
+              onClick={() => setAiMode("title")}
+              style={{ flex: 1, padding: "8px", borderRadius: "8px", border: "none", background: aiMode === "title" ? "var(--primary)" : "var(--bg)", color: aiMode === "title" ? "#fff" : "var(--text-secondary)", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}
+            >
+              Titles (One per line)
+            </button>
+            <button 
+              onClick={() => setAiMode("description")}
+              style={{ flex: 1, padding: "8px", borderRadius: "8px", border: "none", background: aiMode === "description" ? "var(--primary)" : "var(--bg)", color: aiMode === "description" ? "#fff" : "var(--text-secondary)", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}
+            >
+              Description
+            </button>
+          </div>
 
-            <div style={{ paddingTop: "8px", flex: 1, display: "flex", flexDirection: "column" }}>
-              <span style={{ display: "block", fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "8px" }}>
-                <strong>Paste Content Below:</strong>
-              </span>
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px", flex: 1 }}>
-                <textarea 
-                  value={bulkTitlesInput} 
-                  onChange={(e) => setBulkTitlesInput(e.target.value)}
-                  placeholder={aiMode === "title" ? "Example:\nFunny Cat Video 1\nFunny Cat Video 2\nFunny Cat Video 3" : "Paste the global description/hashtags here..."}
-                  disabled={uploading}
-                  className={styles.input}
-                  style={{ width: "100%", padding: "12px", minHeight: "220px", flex: 1, resize: "vertical", fontFamily: "inherit" }}
-                />
-                <Button 
-                  onClick={applyBulkTitles} 
-                  disabled={uploading || !bulkTitlesInput.trim() || items.length === 0}
-                  variant="primary"
-                >
-                  Apply {aiMode === "title" ? "Titles to Videos" : "as Global Description"}
-                </Button>
-              </div>
+          <div style={{ paddingTop: "8px", flex: 1, display: "flex", flexDirection: "column" }}>
+            <span style={{ display: "block", fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "8px" }}>
+              <strong>Paste Content Below:</strong>
+            </span>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", flex: 1 }}>
+              <textarea 
+                value={bulkTitlesInput} 
+                onChange={(e) => setBulkTitlesInput(e.target.value)}
+                placeholder={aiMode === "title" ? "Example:\nFunny Cat Video 1\nFunny Cat Video 2\nFunny Cat Video 3" : "Paste the global description/hashtags here..."}
+                disabled={uploading}
+                className={styles.input}
+                style={{ width: "100%", padding: "12px", minHeight: "220px", flex: 1, resize: "vertical", fontFamily: "inherit" }}
+              />
+              <Button 
+                onClick={applyBulkTitles} 
+                disabled={uploading || !bulkTitlesInput.trim() || items.length === 0}
+                variant="primary"
+              >
+                Apply {aiMode === "title" ? "Titles to Videos" : "as Global Description"}
+              </Button>
             </div>
           </div>
+        </div>
+
+        {/* Bulk Upload Progress Box */}
+        {showProgressBox && totalCount > 0 && (
+          <div 
+            className={styles.card} 
+            style={{ 
+              width: "100%", 
+              margin: 0, 
+              display: "flex", 
+              flexDirection: "column", 
+              gap: "14px",
+              borderColor: uploading ? "var(--primary)" : "var(--border)",
+              boxShadow: uploading ? "0 4px 20px rgba(255, 42, 42, 0.15)" : "none",
+              transition: "all 0.3s ease"
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <h4 style={{ fontSize: "1.05rem", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}>
+                🚀 Bulk Upload Queue
+              </h4>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <button
+                  onClick={() => setIsCollapsed(!isCollapsed)}
+                  style={{
+                    background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text-secondary)",
+                    padding: "4px 8px", borderRadius: "6px", fontSize: "0.8rem", cursor: "pointer",
+                    fontWeight: 500
+                  }}
+                >
+                  {isCollapsed ? "Expand" : "Collapse"}
+                </button>
+                {uploading ? (
+                  <button
+                    onClick={handleCancel}
+                    style={{
+                      background: "var(--error)", border: "none", color: "white",
+                      padding: "4px 10px", borderRadius: "6px", fontSize: "0.8rem", cursor: "pointer",
+                      fontWeight: 600
+                    }}
+                  >
+                    Cancel
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowProgressBox(false)}
+                    style={{
+                      background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)",
+                      padding: "4px 10px", borderRadius: "6px", fontSize: "0.8rem", cursor: "pointer",
+                      fontWeight: 500
+                    }}
+                  >
+                    Close
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Overall Progress */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.9rem" }}>
+              <span style={{ color: "var(--text-secondary)" }}>
+                {uploading ? `Uploading: ${successCount + errorCount}/${totalCount} videos` : "Upload finished"}
+              </span>
+              <span style={{ fontWeight: 700, color: "var(--primary)" }}>{overallPercent}%</span>
+            </div>
+
+            <div className={styles.progressTrack} style={{ height: "8px" }}>
+              <div 
+                className={styles.progressBar} 
+                style={{ width: `${overallPercent}%`, transition: "width 0.3s ease" }}
+              />
+            </div>
+
+            {/* Expanded Content */}
+            {!isCollapsed && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" }}>
+                {/* Stats row */}
+                <div style={{ display: "flex", gap: "12px", fontSize: "0.8rem", color: "var(--text-secondary)", background: "var(--bg)", padding: "8px", borderRadius: "6px" }}>
+                  <span style={{ flex: 1 }}>Succeeded: <strong style={{ color: "var(--success)" }}>{successCount}</strong></span>
+                  <span style={{ flex: 1 }}>Failed: <strong style={{ color: "var(--error)" }}>{errorCount}</strong></span>
+                  <span style={{ flex: 1 }}>Remaining: <strong>{totalCount - successCount - errorCount}</strong></span>
+                </div>
+
+                {/* Queue List */}
+                <div style={{ maxHeight: "150px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "6px", paddingRight: "4px" }}>
+                  {items.map((item, idx) => {
+                    let statusColor = "var(--text-muted)";
+                    let statusText: React.ReactNode = "Pending";
+                    if (item.status === "uploading") {
+                      statusColor = "var(--primary)";
+                      statusText = `Uploading (${item.progress}%)`;
+                    } else if (item.status === "success") {
+                      statusColor = "var(--success)";
+                      statusText = "Succeeded";
+                    } else if (item.status === "error") {
+                      statusColor = "var(--error)";
+                      statusText = (
+                        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                          Failed
+                          <button
+                            onClick={() => handleRetryItem(idx)}
+                            disabled={uploading}
+                            style={{
+                              background: "transparent",
+                              border: "none",
+                              color: "var(--primary)",
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              padding: 0
+                            }}
+                            title="Retry"
+                          >
+                            <MdRefresh size={14} />
+                          </button>
+                        </span>
+                      );
+                    }
+
+                    return (
+                      <div 
+                        key={idx} 
+                        style={{ 
+                          display: "flex", 
+                          justifyContent: "space-between", 
+                          alignItems: "center", 
+                          fontSize: "0.8rem",
+                          padding: "6px 8px",
+                          borderRadius: "4px",
+                          background: item.status === "uploading" ? "rgba(255, 42, 42, 0.05)" : "transparent"
+                        }}
+                      >
+                        <span style={{ 
+                          whiteSpace: "nowrap", 
+                          overflow: "hidden", 
+                          textOverflow: "ellipsis", 
+                          maxWidth: "220px",
+                          color: item.status === "pending" ? "var(--text-muted)" : "var(--text)"
+                        }}>
+                          {idx + 1}. {item.title}
+                        </span>
+                        <span style={{ color: statusColor, fontWeight: item.status === "uploading" ? "600" : "normal" }}>
+                          {statusText}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* General Error Popup Modal */}
       {errorModal.isOpen && (

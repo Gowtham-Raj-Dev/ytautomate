@@ -148,8 +148,14 @@ export async function GET(request: Request) {
                   console.log(`Cleaned up storage file on failure: ${upload.storagePath}`);
                 }
               }
+              const fileSize = upload.fileSize || 0;
+              await userDoc.ref.update({
+                currentStorageUsed: FieldValue.increment(-Number(fileSize)),
+                videosDeletedFromFirebase: FieldValue.increment(1),
+              });
+              console.log(`Updated user stats on failure: decremented storage and incremented deleted count`);
             } catch (cleanupErr) {
-              console.error(`Failed to clean up storage file on failure:`, cleanupErr);
+              console.error(`Failed to clean up storage or stats on failure:`, cleanupErr);
             }
           }
         }

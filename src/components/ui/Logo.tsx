@@ -5,9 +5,10 @@ import styles from "@/styles/Logo.module.css";
 interface LogoProps {
   href?: string;
   compact?: boolean;
+  onClick?: () => void;
 }
 
-export function Logo({ href = "/", compact = false }: LogoProps) {
+export function Logo({ href = "/", compact = false, onClick }: LogoProps) {
   const content = (
     <span className={styles.logo}>
       <span className={styles.mark}>
@@ -28,7 +29,7 @@ export function Logo({ href = "/", compact = false }: LogoProps) {
   );
 
   return (
-    <Link href={href} className={styles.link} aria-label="YT Automate home">
+    <Link href={href} className={styles.link} aria-label="YT Automate home" onClick={onClick}>
       {content}
     </Link>
   );

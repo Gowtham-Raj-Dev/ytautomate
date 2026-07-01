@@ -151,6 +151,14 @@ export async function updateStatsOnYouTubePostAndFirebaseDelete(uid: string, fil
   });
 }
 
+export async function updateStatsOnFailureAndDelete(uid: string, fileSize: number): Promise<void> {
+  await updateDoc(doc(db, USERS, uid), {
+    currentStorageUsed: increment(-fileSize),
+    videosDeletedFromFirebase: increment(1),
+    updatedAt: Date.now(),
+  });
+}
+
 export async function getRecentUploads(
   uid: string,
   max = 20
