@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "cron": "tsx scripts/upload-cron.ts"
   },
   "dependencies": {
     "@ffmpeg/core": "^0.12.10",
