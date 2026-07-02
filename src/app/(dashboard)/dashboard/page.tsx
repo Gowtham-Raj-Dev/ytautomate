@@ -81,6 +81,33 @@ export default function DashboardPage() {
         </div>
       </motion.div>
 
+      {!channel && !loading && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={styles.alertBanner}
+        >
+          <div className={styles.alertIconContainer}>
+            <MdError size={32} color="#facc15" />
+          </div>
+          <div className={styles.alertText}>
+            <h3>YouTube Channel Not Connected</h3>
+            <p>To start scheduling and automatically uploading your Shorts, you need to connect your YouTube channel first.</p>
+          </div>
+          <button 
+            onClick={() => {
+              if (user) {
+                window.location.href = `/api/auth/google/connect?uid=${user.uid}`;
+              }
+            }}
+            className="btn-primary"
+            style={{ whiteSpace: 'nowrap' }}
+          >
+            Connect Channel Now
+          </button>
+        </motion.div>
+      )}
+
       {/* Stat cards */}
       <div className={styles.stats}>
         {stats.map((s, i) => (

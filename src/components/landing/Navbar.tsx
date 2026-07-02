@@ -9,9 +9,9 @@ import { cx } from "@/lib/utils";
 import styles from "@/styles/Navbar.module.css";
 
 const LINKS = [
-  { href: "#features", label: "Features" },
-  { href: "#how", label: "How it works" },
-  { href: "#faq", label: "FAQ" },
+  { href: "/#features", label: "Features" },
+  { href: "/how-to-use", label: "Demo Video" },
+  { href: "/#faq", label: "FAQ" },
 ];
 
 export function Navbar() {

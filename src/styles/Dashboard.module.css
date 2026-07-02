@@ -120,3 +120,50 @@
     font-size: 1.3rem;
   }
 }
+
+.alertBanner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background-color: rgba(234, 179, 8, 0.08);
+  border: 1px solid rgba(234, 179, 8, 0.25);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 32px;
+  justify-content: space-between;
+}
+
+.alertIconContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.alertText {
+  flex-grow: 1;
+}
+
+.alertText h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.alertText p {
+  font-size: 0.95rem;
+  color: #a1a1aa;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .alertBanner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .alertBanner button {
+    width: 100%;
+  }
+}
