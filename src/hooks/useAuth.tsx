@@ -74,22 +74,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let unsubProfile: (() => void) | null = null;
 
     const unsubAuth = onAuthStateChanged(auth, async (fbUser) => {
-      setUser(fbUser);
       if (fbUser) {
-        await ensureUserProfile({
-          uid: fbUser.uid,
-          email: fbUser.email,
-          displayName: fbUser.displayName,
-          photoURL: fbUser.photoURL,
-        });
+        try {
+          await ensureUserProfile({
+            uid: fbUser.uid,
+            email: fbUser.email,
+            displayName: fbUser.displayName,
+            photoURL: fbUser.photoURL,
+          });
+          setUser(fbUser);
 
-        // Set up real-time profile listener
-        unsubProfile = onSnapshot(doc(db, "users", fbUser.uid), (snap) => {
-          if (snap.exists()) {
-            setProfile(snap.data() as UserProfile);
-          }
-        });
+          // Set up real-time profile listener
+          unsubProfile = onSnapshot(doc(db, "users", fbUser.uid), (snap) => {
+            if (snap.exists()) {
+              setProfile(snap.data() as UserProfile);
+            }
+          });
+        } catch (err) {
+          console.error("Auth state profile initialization failed:", err);
+          await signOutUser();
+          setUser(null);
+          setProfile(null);
+        }
       } else {
+        setUser(null);
         setProfile(null);
         if (unsubProfile) {
           unsubProfile();
@@ -108,32 +116,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = useCallback(async () => {
-    const { user: fbUser, session: newSession, refreshToken } = await signInWithGoogle();
+    const { user: fbUser, session: newSession } = await signInWithGoogle();
     setUser(fbUser);
 
-    const p = await ensureUserProfile({
-      uid: fbUser.uid,
-      email: fbUser.email,
-      displayName: fbUser.displayName,
-      photoURL: fbUser.photoURL,
-    });
-    setProfile(p);
+    try {
+      const p = await ensureUserProfile({
+        uid: fbUser.uid,
+        email: fbUser.email,
+        displayName: fbUser.displayName,
+        photoURL: fbUser.photoURL,
+      });
+      setProfile(p);
 
-    if (newSession) {
-      setSession(newSession);
-      persistSession(newSession);
+      if (newSession) {
+        setSession(newSession);
+        persistSession(newSession);
 
-      // Best-effort: fetch + persist the connected channel right away.
-      try {
-        const channel = await fetchMyChannel(newSession.accessToken);
-        if (channel) {
-          // Never pass Firebase Auth refresh token (starts with AMf-vBx) to the YouTube refresh token field
-          await saveConnectedChannel(fbUser.uid, channel, null);
-          setProfile({ ...p, channel });
+        try {
+          const channel = await fetchMyChannel(newSession.accessToken);
+          if (channel) {
+            await saveConnectedChannel(fbUser.uid, channel, null);
+            setProfile({ ...p, channel });
+          }
+        } catch {
+          // Non-fatal — channel can be (re)connected from Settings.
         }
-      } catch {
-        // Non-fatal — channel can be (re)connected from Settings.
       }
+    } catch (err) {
+      await signOutUser();
+      setUser(null);
+      setProfile(null);
+      throw err;
     }
   }, []);
 

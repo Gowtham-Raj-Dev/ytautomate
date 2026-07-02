@@ -1,5 +1,6 @@
 import { Logo } from "@/components/ui/Logo";
 import styles from "@/styles/Landing.module.css";
+import Link from "next/link";
 
 const COLUMNS = [
   {
@@ -22,8 +23,8 @@ const COLUMNS = [
   {
     title: "Legal",
     links: [
-      { label: "Privacy", href: "#" },
-      { label: "Terms", href: "#" },
+      { label: "Privacy", href: "/privacy" },
+      { label: "Terms", href: "/terms" },
       { label: "Security", href: "#" },
     ],
   },
@@ -44,9 +45,9 @@ export function Footer() {
             <div key={col.title} className={styles.footerCol}>
               <h4 className={styles.footerColTitle}>{col.title}</h4>
               {col.links.map((l) => (
-                <a key={l.label} href={l.href} className={styles.footerLink}>
+                <Link key={l.label} href={l.href} className={styles.footerLink}>
                   {l.label}
-                </a>
+                </Link>
               ))}
             </div>
           ))}

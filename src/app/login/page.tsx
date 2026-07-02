@@ -95,8 +95,8 @@ export default function LoginPage() {
         </ul>
 
         <p className={styles.terms}>
-          By continuing you agree to our <a href="#">Terms</a> and{" "}
-          <a href="#">Privacy Policy</a>. We request only the YouTube upload scope.
+          By continuing you agree to our <Link href="/terms">Terms</Link> and{" "}
+          <Link href="/privacy">Privacy Policy</Link>. We request only the YouTube upload scope.
         </p>
       </motion.div>
 

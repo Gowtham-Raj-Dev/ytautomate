@@ -41,6 +41,12 @@ export async function ensureUserProfile(profile: {
     return snap.data() as UserProfile;
   }
 
+  // Limit registration to 5 users during testing
+  const usersSnap = await getDocs(collection(db, USERS));
+  if (usersSnap.size >= 5) {
+    throw new Error("Registration limit reached. Only 5 users are allowed during private testing.");
+  }
+
   const now = Date.now();
   const newProfile: UserProfile = {
     uid: profile.uid,
