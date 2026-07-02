@@ -32,6 +32,8 @@ export async function GET(request: Request) {
       
       const uploadsSnap = await db.collection(`users/${uid}/uploads`)
         .where("status", "==", "scheduled")
+        .orderBy("scheduledAt", "asc")
+        .limit(5)
         .get();
 
       for (const uploadDoc of uploadsSnap.docs) {
