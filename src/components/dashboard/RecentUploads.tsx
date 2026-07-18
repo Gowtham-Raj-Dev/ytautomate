@@ -5,7 +5,10 @@ import Image from "next/image";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import type { UploadRecord, UploadStatus } from "@/types";
 import { Spinner } from "@/components/ui/Spinner";
-import { MdMovie, MdPlayArrow } from "react-icons/md";
+import { MdMovie, MdPlayArrow, MdDeleteOutline } from "react-icons/md";
+import { deleteUploadRecord } from "@/services/firestore";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/useToast";
 import styles from "@/styles/Recent.module.css";
 
 const STATUS_META: Record<UploadStatus, { label: string; className: string }> = {
@@ -25,7 +28,25 @@ interface RecentUploadsProps {
 }
 
 export function RecentUploads({ uploads, loading, limit, onLimitChange }: RecentUploadsProps) {
+  const { user } = useAuth();
+  const toast = useToast();
   const [activeSubTab, setActiveSubTab] = useState<"single" | "bulk">("single");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (id: string) => {
+    if (!user) return;
+    if (!confirm("Are you sure you want to delete this upload record? If this is an uploading video, you might need to clean up storage manually.")) return;
+    
+    try {
+      setDeletingId(id);
+      await deleteUploadRecord(user.uid, id);
+      toast.success("Upload deleted successfully");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete upload");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const filteredUploads = uploads.filter((u) => {
     if (activeSubTab === "single") {
@@ -125,6 +146,7 @@ export function RecentUploads({ uploads, loading, limit, onLimitChange }: Recent
                 <th>Visibility</th>
                 <th>Publish Time</th>
                 <th>Uploaded On</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -172,6 +194,28 @@ export function RecentUploads({ uploads, loading, limit, onLimitChange }: Recent
                     <td className={styles.visibility}>{u.visibility}</td>
                     <td className={styles.date}>{u.status === "scheduled" || u.status === "completed" ? formatDateTime(u.scheduledAt) : "—"}</td>
                     <td className={styles.date}>{formatDate(u.createdAt)}</td>
+                    <td>
+                      <button
+                        onClick={() => handleDelete(u.id)}
+                        disabled={deletingId === u.id}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "var(--error)",
+                          cursor: deletingId === u.id ? "wait" : "pointer",
+                          padding: "6px",
+                          borderRadius: "4px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          opacity: deletingId === u.id ? 0.5 : 1,
+                          transition: "all 0.2s"
+                        }}
+                        title="Delete record"
+                      >
+                        <MdDeleteOutline size={20} />
+                      </button>
+                    </td>
                   </tr>
                 );
               })}

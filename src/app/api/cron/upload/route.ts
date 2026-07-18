@@ -1,3 +1,5 @@
+export const maxDuration = 300; // 5 minutes timeout for Firebase/Cloud Functions
+
 import { NextResponse } from "next/server";
 import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
