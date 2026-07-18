@@ -38,7 +38,7 @@ export function ScheduleSettings() {
   const handleAddTime = (day: keyof WeeklySchedule) => {
     setSchedule(prev => ({
       ...prev,
-      [day]: [...prev[day], "12:00"].sort()
+      [day]: [...prev[day], "12:00"]
     }));
   };
 
@@ -55,7 +55,7 @@ export function ScheduleSettings() {
       newTimes[index] = value;
       return {
         ...prev,
-        [day]: newTimes.sort()
+        [day]: newTimes
       };
     });
   };
@@ -64,7 +64,13 @@ export function ScheduleSettings() {
     if (!user) return;
     setLoading(true);
     try {
-      await saveScheduleSettings(user.uid, schedule);
+      const sortedSchedule = {} as WeeklySchedule;
+      (Object.keys(schedule) as (keyof WeeklySchedule)[]).forEach(day => {
+        sortedSchedule[day] = [...schedule[day]].sort();
+      });
+
+      await saveScheduleSettings(user.uid, sortedSchedule);
+      setSchedule(sortedSchedule);
       await refreshProfile();
       toast.success("Schedule settings saved successfully!");
     } catch (err: any) {
