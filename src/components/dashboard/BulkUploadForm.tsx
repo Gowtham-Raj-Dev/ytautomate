@@ -31,6 +31,7 @@ interface BulkFileItem {
   scheduledAt: number | null;
   status: "pending" | "uploading" | "success" | "error";
   progress: number;
+  tags: string[];
 }
 
 const SUGGESTED_TAGS = [
@@ -50,9 +51,10 @@ let cachedGlobalDesc = `📥 Download this video in Full HD for FREE:
 
 #shorts #aivideo #freestockfootage #greenscreen #viralaI`;
 let cachedGlobalVis: Visibility = "public";
+let cachedGlobalTags = "";
 let cachedBulkTitlesInput = "";
 let cachedAiTopic = "";
-let cachedAiMode: "title" | "description" = "title";
+let cachedAiMode: "title" | "description" | "tags" = "title";
 let cachedShowProgressBox = false;
 let cachedIsCollapsed = false;
 
@@ -64,9 +66,10 @@ export function BulkUploadForm() {
   const [uploading, setUploading] = useState(false);
   const [globalDesc, setGlobalDesc] = useState(cachedGlobalDesc);
   const [globalVis, setGlobalVis] = useState<Visibility>(cachedGlobalVis);
+  const [globalTags, setGlobalTags] = useState(cachedGlobalTags);
   const [bulkTitlesInput, setBulkTitlesInput] = useState(cachedBulkTitlesInput);
   const [aiTopic, setAiTopic] = useState(cachedAiTopic);
-  const [aiMode, setAiMode] = useState<"title" | "description">(cachedAiMode);
+  const [aiMode, setAiMode] = useState<"title" | "description" | "tags">(cachedAiMode);
   const [limitReached, setLimitReached] = useState(false);
   const [generatingAi, setGeneratingAi] = useState(false);
   const [errorModal, setErrorModal] = useState<{isOpen: boolean, message: string, title?: string}>({isOpen: false, message: ""});
@@ -84,12 +87,13 @@ export function BulkUploadForm() {
     cachedItems = items;
     cachedGlobalDesc = globalDesc;
     cachedGlobalVis = globalVis;
+    cachedGlobalTags = globalTags;
     cachedBulkTitlesInput = bulkTitlesInput;
     cachedAiTopic = aiTopic;
     cachedAiMode = aiMode;
     cachedShowProgressBox = showProgressBox;
     cachedIsCollapsed = isCollapsed;
-  }, [items, globalDesc, globalVis, bulkTitlesInput, aiTopic, aiMode, showProgressBox, isCollapsed]);
+  }, [items, globalDesc, globalVis, globalTags, bulkTitlesInput, aiTopic, aiMode, showProgressBox, isCollapsed]);
 
   const handleFolderSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -116,6 +120,7 @@ export function BulkUploadForm() {
       title: generateTitleFromFilename(file.name),
       description: globalDesc,
       visibility: globalVis,
+      tags: globalTags.split(",").map(t => t.trim()).filter(Boolean),
       scheduledAt: scheduleDates[i] || null,
       status: "pending",
       progress: 0
@@ -134,6 +139,12 @@ export function BulkUploadForm() {
     setItems(prev => prev.map(item => ({ ...item, visibility: val })));
   };
 
+  const handleGlobalTagsChange = (val: string) => {
+    setGlobalTags(val);
+    const parsedTags = val.split(",").map(t => t.trim()).filter(Boolean);
+    setItems(prev => prev.map(item => ({ ...item, tags: parsedTags })));
+  };
+
   const handleTitleChange = (index: number, newTitle: string) => {
     setItems(prev => {
       const copy = [...prev];
@@ -146,6 +157,11 @@ export function BulkUploadForm() {
     if (aiMode === "description") {
       handleGlobalDescChange(bulkTitlesInput);
       toast.success("Description applied globally!");
+      return;
+    }
+    if (aiMode === "tags") {
+      handleGlobalTagsChange(bulkTitlesInput);
+      toast.success("Tags applied globally!");
       return;
     }
 
@@ -204,6 +220,7 @@ export function BulkUploadForm() {
         storagePath: result.path,
         error: null,
         uploadType: "bulk",
+        tags: latestItem.tags,
       });
 
       await updateStatsOnFirebaseUpload(user.uid, latestItem.file.size);
@@ -346,6 +363,22 @@ export function BulkUploadForm() {
                   <option value="unlisted">Unlisted</option>
                   <option value="private">Private</option>
                 </select>
+              </label>
+            </div>
+            <div style={{ display: "flex", gap: "16px", flexWrap: "wrap", marginTop: "8px" }}>
+              <label style={{ flex: 1, minWidth: "200px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                  <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>Tags (Comma separated)</span>
+                </div>
+                <input 
+                  type="text"
+                  value={globalTags} 
+                  onChange={(e) => handleGlobalTagsChange(e.target.value)}
+                  disabled={uploading}
+                  placeholder="tamil news today, tamil news, vijay"
+                  className={styles.input}
+                  style={{ width: "100%", padding: "8px", background: "var(--bg)", border: "1px solid var(--border)", color: "var(--text)" }}
+                />
               </label>
             </div>
             
@@ -493,13 +526,19 @@ export function BulkUploadForm() {
               onClick={() => setAiMode("title")}
               style={{ flex: 1, padding: "8px", borderRadius: "8px", border: "none", background: aiMode === "title" ? "var(--primary)" : "var(--bg)", color: aiMode === "title" ? "#fff" : "var(--text-secondary)", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}
             >
-              Titles (One per line)
+              Titles
             </button>
             <button 
               onClick={() => setAiMode("description")}
               style={{ flex: 1, padding: "8px", borderRadius: "8px", border: "none", background: aiMode === "description" ? "var(--primary)" : "var(--bg)", color: aiMode === "description" ? "#fff" : "var(--text-secondary)", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}
             >
-              Description
+              Desc
+            </button>
+            <button 
+              onClick={() => setAiMode("tags")}
+              style={{ flex: 1, padding: "8px", borderRadius: "8px", border: "none", background: aiMode === "tags" ? "var(--primary)" : "var(--bg)", color: aiMode === "tags" ? "#fff" : "var(--text-secondary)", fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}
+            >
+              Tags
             </button>
           </div>
 
@@ -511,7 +550,7 @@ export function BulkUploadForm() {
               <textarea 
                 value={bulkTitlesInput} 
                 onChange={(e) => setBulkTitlesInput(e.target.value)}
-                placeholder={aiMode === "title" ? "Example:\nFunny Cat Video 1\nFunny Cat Video 2\nFunny Cat Video 3" : "Paste the global description/hashtags here..."}
+                placeholder={aiMode === "title" ? "Example:\nFunny Cat Video 1\nFunny Cat Video 2\nFunny Cat Video 3" : aiMode === "description" ? "Paste the global description/hashtags here..." : "Paste comma separated tags here, e.g. tamil news today, tamil news, vijay"}
                 disabled={uploading}
                 className={styles.input}
                 style={{ width: "100%", padding: "12px", minHeight: "220px", flex: 1, resize: "vertical", fontFamily: "inherit" }}
@@ -521,7 +560,7 @@ export function BulkUploadForm() {
                 disabled={uploading || !bulkTitlesInput.trim() || items.length === 0}
                 variant="primary"
               >
-                Apply {aiMode === "title" ? "Titles to Videos" : "as Global Description"}
+                Apply {aiMode === "title" ? "Titles to Videos" : aiMode === "description" ? "as Global Description" : "as Global Tags"}
               </Button>
             </div>
           </div>

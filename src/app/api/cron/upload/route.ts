@@ -78,6 +78,7 @@ export async function GET(request: Request) {
                 snippet: {
                   title: upload.title,
                   description: upload.description,
+                  tags: upload.tags || [],
                 },
                 status: {
                   privacyStatus: upload.visibility,

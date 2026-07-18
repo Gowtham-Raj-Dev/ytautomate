@@ -69,6 +69,7 @@ export interface UploadRecord {
   storagePath?: string;
   error?: string | null;
   uploadType?: "single" | "bulk";
+  tags?: string[];
 }
 
 /** Metadata for a new upload submitted from the dashboard. */
