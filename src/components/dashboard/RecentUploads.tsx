@@ -33,13 +33,13 @@ export function RecentUploads({ uploads, loading, limit, onLimitChange }: Recent
   const [activeSubTab, setActiveSubTab] = useState<"single" | "bulk">("single");
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (upload: UploadRecord) => {
     if (!user) return;
     if (!confirm("Are you sure you want to delete this upload record? If this is an uploading video, you might need to clean up storage manually.")) return;
     
     try {
-      setDeletingId(id);
-      await deleteUploadRecord(user.uid, id);
+      setDeletingId(upload.id);
+      await deleteUploadRecord(user.uid, upload);
       toast.success("Upload deleted successfully");
     } catch (err: any) {
       toast.error(err.message || "Failed to delete upload");
@@ -196,7 +196,7 @@ export function RecentUploads({ uploads, loading, limit, onLimitChange }: Recent
                     <td className={styles.date}>{formatDate(u.createdAt)}</td>
                     <td>
                       <button
-                        onClick={() => handleDelete(u.id)}
+                        onClick={() => handleDelete(u)}
                         disabled={deletingId === u.id}
                         style={{
                           background: "transparent",

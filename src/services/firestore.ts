@@ -16,7 +16,8 @@ import {
   onSnapshot,
   type DocumentData,
 } from "firebase/firestore";
-import { db } from "@/firebase/config";
+import { ref, deleteObject } from "firebase/storage";
+import { db, storage } from "@/firebase/config";
 import type {
   UserProfile,
   UploadRecord,
@@ -126,9 +127,25 @@ export async function updateUploadRecord(
 
 export async function deleteUploadRecord(
   uid: string,
-  id: string
+  upload: UploadRecord
 ): Promise<void> {
-  await deleteDoc(doc(db, USERS, uid, UPLOADS, id));
+  // If the file is still in storage (status is queued, scheduled, or uploading), delete it
+  if (upload.storagePath && ["queued", "scheduled", "uploading"].includes(upload.status)) {
+    try {
+      const fileRef = ref(storage, upload.storagePath);
+      await deleteObject(fileRef);
+      console.log(`Deleted storage file for upload ${upload.id}`);
+      
+      // Update user stats
+      await updateStatsOnFailureAndDelete(uid, upload.fileSize || 0);
+    } catch (err: any) {
+      console.error("Error deleting storage file:", err);
+      // Depending on rules, if file is already deleted or not found, we ignore.
+    }
+  }
+
+  // Delete the database document
+  await deleteDoc(doc(db, USERS, uid, UPLOADS, upload.id));
 }
 
 export async function incrementUploadCount(uid: string): Promise<void> {
